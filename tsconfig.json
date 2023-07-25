@@ -1,0 +1,40 @@
+{
+  "display": "Node 18",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "src",
+    "outDir": "lib",
+    "module": "CommonJS",
+    "target": "es2022",
+    "types": ["node"],
+    "moduleResolution": "node",
+    "declaration": true,
+    "removeComments": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "noLib": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useUnknownInCatchVariables": false,
+    "sourceMap": false,
+    "strict": true,
+    "strictNullChecks": false,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": false,
+    "strictPropertyInitialization": false
+  },
+  "exclude": [
+    "node_modules", 
+    "lib", 
+    "test/**/*", 
+    "**/*.spec.ts"
+  ]
+}
