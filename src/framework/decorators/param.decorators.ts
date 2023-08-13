@@ -58,3 +58,16 @@ export const Param = createParamDecorator<string>(
     ? req.params?.[key]
     : req.params
 );
+
+/**
+ * Logger Param Decorator
+ **/
+export const Logger = createParamDecorator<string>(
+  (key: string, req: TReq, res: TRes) => 
+    req.log
+);
+
+/**
+ * Export the Log Type
+ **/
+export type Logger = TReq['log'];

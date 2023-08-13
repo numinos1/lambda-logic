@@ -68,7 +68,7 @@ export class MethodMeta {
       console.log('CALL_ROUTE', this.action, path);
 
       return method.apply(proto, params.map(param => {
-        let value;
+        let value: any;
         
         if (param.getter) {
           value = param.getter(param.data, req, res);
