@@ -3,12 +3,20 @@ import { ControllerMeta, controllersMeta } from '../metadata/controller.meta';
 import { TGetter } from '../metadata/method.meta';
 import { ZodTypeAny, ZodObject } from 'zod';
 import { container, InjectionToken } from 'tsyringe';
+import { TApiConfig } from '../metadata/method.meta';
 import { API } from 'lambda-api';
+
+export type TRoutes = Record<string, TApiConfig>;
 
 /**
  * Bind Controller Routes to HTTP API
  **/
-export function bindControllerRoutes(api: API, controllers: Function[]) {
+export function bindControllerRoutes(
+  api: API,
+  controllers: Function[]
+): TRoutes {
+  const routes: TRoutes = {};
+
   controllers.forEach((controller) => {
     const ctrl = controllersMeta.get(controller.prototype);
 
@@ -21,12 +29,12 @@ export function bindControllerRoutes(api: API, controllers: Function[]) {
     if (!instance) {
       throw new Error(`${controller.name} missing @inject decorator`);
     }
-    console.log(`CONTROLLER: ${ctrl.name} ${ctrl.path}`);
-
-    ctrl.methods.forEach(method =>
-      method.bindApi(api, ctrl.path, instance)
-    );
+    ctrl.methods.forEach(method => {
+      routes[ctrl.name] = method.bindApi(api, ctrl.path, instance);
+    });
   });
+
+  return routes;
 }
 
 /**

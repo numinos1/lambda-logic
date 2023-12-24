@@ -1,6 +1,6 @@
 {
   "name": "lambda-logic",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Andrew Bunker",
   "license": "MIT",
   "description": "Lambda Tools and Utilities",
@@ -39,6 +39,6 @@
     "loader-utils": "^3.2.1",
     "prettier": "^2.8.8",
     "ts-node": "^10.9.1",
-    "typescript": "~5.0.4"
+    "typescript": "~5.2.2"
   }
 }

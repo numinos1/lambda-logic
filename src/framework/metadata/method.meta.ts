@@ -13,6 +13,15 @@ export type TGetter = (data: any, req: TReq, res: TRes) => any;
 export type TValidator = ZodTypeAny | undefined;
 
 /**
+ * API Configuration 
+ */
+export interface TApiConfig {
+  action: string;
+  path: string;
+  method: string;
+}
+
+/**
  * Param Type
  **/
 export interface TParam {
@@ -42,7 +51,7 @@ export class MethodMeta {
   /**
    * Bind Api
    **/
-  bindApi(api: any, basePath: string, proto: Function) {
+  bindApi(api: any, basePath: string, proto: Function): TApiConfig {
     const method = this.ref;
 
     if (method === null) {
@@ -59,13 +68,11 @@ export class MethodMeta {
       }
       return { ...decoratorParams, type };
     });
-      
-    console.log(`${this.action.toUpperCase()} ${path} => ${this.name}()`);
 
     // Action Handler
     api[this.action](path, (req: TReq, res: TRes) => {
 
-      console.log('CALL_ROUTE', this.action, path);
+      //console.log('CALL_ROUTE', this.action, path);
 
       return method.apply(proto, params.map(param => {
         let value: any;
@@ -82,6 +89,12 @@ export class MethodMeta {
         return value;
       }));
     });
+
+    return {
+      action: this.action.toUpperCase(),
+      path: path,
+      method: this.name
+    };
   } 
 }
 
