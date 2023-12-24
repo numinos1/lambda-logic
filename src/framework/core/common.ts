@@ -6,7 +6,7 @@ import { container, InjectionToken } from 'tsyringe';
 import { TApiConfig } from '../metadata/method.meta';
 import { API } from 'lambda-api';
 
-export type TRoutes = Record<string, TApiConfig>;
+export type TRoutes = Record<string, TApiConfig[]>;
 
 /**
  * Bind Controller Routes to HTTP API
@@ -30,7 +30,12 @@ export function bindControllerRoutes(
       throw new Error(`${controller.name} missing @inject decorator`);
     }
     ctrl.methods.forEach(method => {
-      routes[ctrl.name] = method.bindApi(api, ctrl.path, instance);
+      let route: TApiConfig[] = routes[ctrl.name];
+
+      if (!route) {
+        routes[ctrl.name] = route = [];
+      }
+      route.push(method.bindApi(api, ctrl.path, instance));
     });
   });
 
