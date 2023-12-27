@@ -13,12 +13,23 @@ export type TGetter = (data: any, req: TReq, res: TRes) => any;
 export type TValidator = ZodTypeAny | undefined;
 
 /**
+ * Authentication Role
+ */
+export enum Role {
+  Admin = 'ADMIN',
+  Owner = 'OWNER',
+  Member = 'MEMBER',
+  Public = 'PUBLIC'
+}
+
+/**
  * API Configuration 
  */
 export interface TApiConfig {
   action: string;
   path: string;
   method: string;
+  role: Role
 }
 
 /**
@@ -39,6 +50,7 @@ export class MethodMeta {
   public path: string = '';
   public action: string = '';
   public ref: Function | null = null;
+  public role: Role | null = null;
   public params: TParam[] = [];
 
   /**
@@ -54,12 +66,17 @@ export class MethodMeta {
   bindApi(api: any, basePath: string, proto: Function): TApiConfig {
     const method = this.ref;
 
-    if (method === null) {
+    if (method == null) {
       throw new Error(`${this.name} method missing route decorator`);
     }
+    if (this.role == null) {
+      throw new Error(`${this.name} method missing role decorator`); 
+    }
+
     const path = '/' + join(basePath, this.path).replace(/^\//, '');
     const types = Reflect.getMetadata("design:paramtypes", proto, this.name);
 
+    // Map the method params
     const params: TParam[] = types.map((type: Function, i: number) => {
       const decoratorParams = this.params[i];
 
@@ -93,7 +110,8 @@ export class MethodMeta {
     return {
       action: this.action.toUpperCase(),
       path: path,
-      method: this.name
+      method: this.name,
+      role: this.role
     };
   } 
 }

@@ -34,16 +34,16 @@ export class ControllerMeta {
   /**
    * Get or Create Method
    **/
-  getMethod(name: string, action?: string, path?: string, ref?: Function) {
+  getMethod(name: string) { //, action?: string, path?: string, ref?: Function) {
     let method = this.methods.get(name);
 
     if (!method) {
       method = new MethodMeta(name);
       this.methods.set(name, method);
     }
-    action && (method.action = action);
-    path && (method.path = path);
-    ref && (method.ref = ref);
+    // action && (method.action = action);
+    // path && (method.path = path);
+    // ref && (method.ref = ref);
 
     return method;
   }
