@@ -23,10 +23,10 @@ export function bindControllerRoutes(
     if (!ctrl || typeof ctrl.ref !== 'function') {
       throw new Error(`${controller.name} missing @Controller decorator`);
     }
-    const instance: Function = container.resolve(
+    const classInstance: Function = container.resolve(
       ctrl.ref as InjectionToken<Function>
     );
-    if (!instance) {
+    if (!classInstance) {
       throw new Error(`${controller.name} missing @inject decorator`);
     }
     ctrl.methods.forEach(method => {
@@ -35,7 +35,7 @@ export function bindControllerRoutes(
       if (!route) {
         routes[ctrl.name] = route = [];
       }
-      route.push(method.bindApi(api, ctrl.path, instance));
+      route.push(method.bindToApi(api, ctrl.path, classInstance));
     });
   });
 

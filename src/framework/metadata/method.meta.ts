@@ -1,4 +1,5 @@
 import { Request as TReq, Response as TRes } from 'lambda-api';
+import createError from 'http-errors';
 import { join } from 'path';
 import { ZodTypeAny } from 'zod';
 
@@ -12,15 +13,7 @@ export type TGetter = (data: any, req: TReq, res: TRes) => any;
  **/
 export type TValidator = ZodTypeAny | undefined;
 
-/**
- * Authentication Role
- */
-export enum Role {
-  Admin = 'ADMIN',
-  Owner = 'OWNER',
-  Member = 'MEMBER',
-  Public = 'PUBLIC'
-}
+export type TGuard = (req: TReq) => Promise<Boolean>;
 
 /**
  * API Configuration 
@@ -29,7 +22,7 @@ export interface TApiConfig {
   action: string;
   path: string;
   method: string;
-  role: Role
+  guards: TGuard[];
 }
 
 /**
@@ -50,7 +43,7 @@ export class MethodMeta {
   public path: string = '';
   public action: string = '';
   public ref: Function | null = null;
-  public role: Role | null = null;
+  public guards: TGuard[] = [];
   public params: TParam[] = [];
 
   /**
@@ -61,37 +54,49 @@ export class MethodMeta {
   }
 
   /**
-   * Bind Api
+   * Bind Route to Lambda API 
    **/
-  bindApi(api: any, basePath: string, proto: Function): TApiConfig {
-    const method = this.ref;
+  bindToApi(api: any, basePath: string, actionClass: Function): TApiConfig {
+    const actionMethod = this.ref;
 
-    if (method == null) {
+    if (actionMethod == null) {
       throw new Error(`${this.name} method missing route decorator`);
     }
-    if (this.role == null) {
-      throw new Error(`${this.name} method missing role decorator`); 
-    }
+    const routePath = this.toRoutePath(basePath);
+    const routeAction = this.toRouteAction(actionMethod, actionClass);
 
-    const path = '/' + join(basePath, this.path).replace(/^\//, '');
-    const types = Reflect.getMetadata("design:paramtypes", proto, this.name);
+    api[this.action](routePath, routeAction);
 
-    // Map the method params
-    const params: TParam[] = types.map((type: Function, i: number) => {
-      const decoratorParams = this.params[i];
+    return {
+      action: this.action.toUpperCase(),
+      path: routePath,
+      method: this.name,
+      guards: this.guards
+    };
+  } 
 
-      if (!decoratorParams) {
-        throw new Error(`${this.name} method missing param decorator at index ${i}`);
-      }
-      return { ...decoratorParams, type };
-    });
+  /**
+   * Create Route Path
+   */
+  toRoutePath(basePath: string): string {
+    return '/' +
+      join(basePath, this.path)
+        .replace(/^\//, '');
+  }
 
-    // Action Handler
-    api[this.action](path, (req: TReq, res: TRes) => {
+  /**
+   * Create Route Action Closure
+   */
+  toRouteAction(actionMethod: Function, actionClass: Function) {
+    const routeParams = this.toRouteParams(actionClass);
+    const routeGuard = this.toRouteGuard();
+
+    return async function routeAction(req: TReq, res: TRes) {
+      await routeGuard(req);
 
       //console.log('CALL_ROUTE', this.action, path);
 
-      return method.apply(proto, params.map(param => {
+      const actionParams = routeParams.map(param => {
         let value: any;
         
         if (param.getter) {
@@ -104,15 +109,56 @@ export class MethodMeta {
           value = param.type(value);
         }
         return value;
-      }));
-    });
+      })
 
-    return {
-      action: this.action.toUpperCase(),
-      path: path,
-      method: this.name,
-      role: this.role
-    };
-  } 
+      return actionMethod.apply(actionClass, actionParams);
+    }
+  }
+
+  /**
+   * Create Route Params Array
+   * 
+   * - Each route param must have been decorated when defined
+   * - Results will be applied at runtime when route is called
+   */
+  toRouteParams(actionClass: Function): TParam[] {
+    const types = Reflect.getMetadata("design:paramtypes", actionClass, this.name);
+
+    return types.map((type: Function, i: number) => {
+      const decoratorParams = this.params[i];
+
+      if (!decoratorParams) {
+        throw new Error(`${this.name} method missing param decorator at index ${i}`);
+      }
+      return { ...decoratorParams, type };
+    });
+  }
+
+  /**
+   * Create Route Guard Closure
+   * 
+   * - Must be at least one guard rule
+   * - Guard rules are executed in sequence with logical "or"
+   * - Guard rules throw to explicitly deny access
+   * - Guard rules return true to immediately grant access
+   * - Guard rules return false to continue with next rule
+   * - Access is denied if all guard rules return false
+   */
+  toRouteGuard() {
+    const guards = this.guards;
+    const guardLen = guards.length;
+
+    if (!guardLen) {
+      throw new Error(`${this.name} method missing a guard`);
+    }
+
+    return async function routeGuard(req: TReq) {
+      for (let i = 0; i < guardLen; ++i) {
+        const result = await guards[i](req);
+        if (result) return;
+      }
+      throw new createError.Unauthorized();
+    }
+  }
 }
 

@@ -1,5 +1,5 @@
 import { ControllerMeta } from '../metadata/controller.meta';
-import { Role } from '../metadata/method.meta';
+import { TGuard } from '../metadata/method.meta';
 
 /**
  * GET Actuib Decorator
@@ -80,45 +80,20 @@ export function All(path: string = '') {
 }
 
 /**
- * Public Role Decorator
+ * Auth Guard Decorator
  */
-export function Public() {
+export function Guard(...guards: TGuard[]) {
+  if (!guards.length) {
+    throw new Error('Guard rule must be passed to decorator');
+  }
   return (proto: any, name: string, value: any) => {
     const method = new ControllerMeta(proto).getMethod(name);
 
-    method.role = Role.Public;
-  };
-}
-
-/**
- * Member Role Decorator
- */
-export function Member() {
-  return (proto: any, name: string, value: any) => {
-    const method = new ControllerMeta(proto).getMethod(name);
-
-    method.role = Role.Member;
-  };
-}
-
-/**
- * Owner Role Decorator
- */
-export function Owner() {
-  return (proto: any, name: string, value: any) => {
-    const method = new ControllerMeta(proto).getMethod(name);
-
-    method.role = Role.Owner;
-  };
-}
-
-/**
- * Admin Role Decorator
- */
-export function Admin() {
-  return (proto: any, name: string, value: any) => {
-    const method = new ControllerMeta(proto).getMethod(name);
-
-    method.role = Role.Admin;
+    if (typeof value.value !== 'string') {
+      throw new Error(`Controller method ${method.name} role must be a string`);
+    }
+    guards.forEach(guard =>
+      method.guards.push(guard)
+    );
   };
 }
