@@ -100,11 +100,17 @@ export async function getBody(req: IncomingMessage) {
  **/
 export function setResponse(res: ServerResponse, result: any) {
   if (isError(result)) {
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.writeHead(
+      result.statusCode || result.code || 500,
+      { 'Content-Type': 'text/plain' }
+    );
     res.write(toString(result));
   }
   else if (!isEvent(result)) {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(
+      result.statusCode || result.code || 200,
+      { 'Content-Type': 'application/json' }
+    );
     res.write(toString(result));
   }
   else {

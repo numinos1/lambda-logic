@@ -83,17 +83,11 @@ export function All(path: string = '') {
  * Auth Guard Decorator
  */
 export function Guard(...guards: TGuard[]) {
-  if (!guards.length) {
-    throw new Error(`Guard decorator must be passed at least one rule function`);
-  }
   return (proto: any, name: string, value: any) => {
     const method = new ControllerMeta(proto).getMethod(name);
 
-    guards.forEach(guard => {
-      if (typeof guard !== 'function') {
-        throw new Error(`${proto}.${name} Guard decorator rule must be a function: ${guard}`);
-      }
-      method.guards.push(guard);
-    });
+    guards.forEach(guard =>
+      method.guards.push(guard)
+    );
   };
 }
