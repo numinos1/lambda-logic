@@ -86,8 +86,6 @@ export function Guard(...guards: TGuard[]) {
   return (proto: any, name: string, value: any) => {
     const method = new ControllerMeta(proto).getMethod(name);
 
-    guards.forEach(guard =>
-      method.guards.push(guard)
-    );
+    method.guards.push(guards)
   };
 }

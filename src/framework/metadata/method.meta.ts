@@ -15,6 +15,8 @@ export type TValidator = ZodTypeAny | undefined;
 
 export type TGuard = (req: TReq) => Promise<Boolean>;
 
+export type TGuards = TGuard[];
+
 /**
  * API Configuration 
  */
@@ -22,7 +24,7 @@ export interface TApiConfig {
   action: string;
   path: string;
   method: string;
-  guards: TGuard[];
+  guards: TGuards[];
 }
 
 /**
@@ -43,7 +45,7 @@ export class MethodMeta {
   public path: string = '';
   public action: string = '';
   public ref: Function | null = null;
-  public guards: TGuard[] = [];
+  public guards: TGuards[] = [];
   public params: TParam[] = [];
 
   /**
@@ -138,11 +140,11 @@ export class MethodMeta {
    * Create Route Guard Closure
    * 
    * - Must be at least one guard rule
-   * - Guard rules are executed in sequence with logical "or"
-   * - Guard rules throw to explicitly deny access
-   * - Guard rules return true to immediately grant access
-   * - Guard rules return false to continue with next rule
-   * - Access is denied if all guard rules return false
+   * - Guard rules within a decorator are evaluated with logical AND
+   * - Guard rules between decorators are evaluated with logical OR
+   * - Guard rules should throw to explicitly deny access
+   * - Access granted if all guard rules in a decorator evalute to true.
+   * - Access denied if no guard decorator evaluates to true
    */
   toRouteGuard() {
     const guards = this.guards;
@@ -151,11 +153,18 @@ export class MethodMeta {
     if (!guardLen) {
       throw new Error(`${this.name} method missing a guard`);
     }
-
     return async function routeGuard(req: TReq) {
-      for (let i = 0; i < guardLen; ++i) {
-        const result = await guards[i](req);
-        if (result) return;
+      for (let orIndex = 0; orIndex < guardLen; ++orIndex) {
+        const andGuards = guards[orIndex];
+        let andIndex = 0;
+
+        while (andIndex < andGuards.length) {
+          if (!await andGuards[andIndex](req)) break;
+          andIndex++;
+        }
+        if (andIndex === andGuards.length) {
+          return;
+        }
       }
       throw new createError.Unauthorized();
     }
